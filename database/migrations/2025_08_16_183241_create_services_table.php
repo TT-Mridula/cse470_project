@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('services', function (Blueprint $table) {
-            $table->id();
-            $table->string('icon');
-            $table->string('title');
-            $table->longText('description');
-            
-            $table->timestamps();
+            $table->id(); // This is your primary key
+            $table->string('title'); // Adding title column
+            $table->string('category'); // Adding category column
+            $table->string('icon'); // Adding icon column
+            $table->text('description'); // Adding description column
+            $table->timestamps(); // This will add created_at and updated_at columns
         });
     }
 

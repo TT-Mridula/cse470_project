@@ -28,15 +28,17 @@ class ServicePagesController extends Controller
         $this->validate($request,[
             'icon' => 'required|string',
             'title' => 'required|string',
+            'category' => 'required|string',
             'description' => 'required|string',
         ]);
         $services = new Service;
         $services->icon = $request->icon;
         $services->title = $request->title;
+        $services->category = $request->category;
         $services->description = $request->description;
         $services->save();
 
-        return redirect()->route('admin.services.create')->with('success', 'New Service Created Successfully');
+        return redirect()->route('admin.services.list')->with('success', 'New Service Created Successfully');
 
 
     }

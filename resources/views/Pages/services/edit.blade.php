@@ -1,4 +1,4 @@
-@extends('layouts.admin_layout')
+@extends('layouts.admin')
 @section('content')
     <main>
         <div class="container-fluid">
@@ -19,6 +19,10 @@
                         <label for="title"><h4>Title</h4></label>
                         <input type="text" class="form-control" id="title" name="title" value="{{$service->title}}">
                     </div>
+                    <div class="mb-3">
+    <label for="category" class="form-label">Category</label>
+    <input type="text" class="form-control" id="category" name="category" value="{{ old('category', $service->category ?? '') }}">
+</div>
                     <div class="mb-5">
                         <label for="description"><h4>Description</h4></label>
                         <textarea type="text" class="form-control" id="description" name="description">{{$service->description}}</textarea>

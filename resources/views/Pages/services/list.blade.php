@@ -1,4 +1,4 @@
-@extends('layouts.admin_layout')
+@extends('layouts.admin')
 @section('content')
     <main>
         <div class="container-fluid">
@@ -13,6 +13,7 @@
                     <th scope="col">#</th>
                     <th scope="col">Icon</th>
                     <th scope="col">Title</th>
+                    <th scope="col">Category</th>
                     <th scope="col">Description</th>
                     <th scope="col">Action</th>
                   </tr>
@@ -24,6 +25,7 @@
                                 <th scope="row">{{$service->id}}</th>
                                 <td>{{$service->icon}}</td>
                                 <td>{{$service->title}}</td>
+                                <td>{{$service->Category}}</td>
                                 <td>{{Str::limit(strip_tags($service->description),40)}}</td>
                                 <td>
                                     <div class="row">

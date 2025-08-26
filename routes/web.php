@@ -1,59 +1,162 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\PagesController;
-use App\Http\Controllers\MainPagesController;
-use App\Http\Controllers\ServicePagesController;
-use App\Http\Controllers\PortfolioPagesController;
-use App\Http\Controllers\AboutPagesController;
-use App\Http\Controllers\ContactFormController;
+use App\Http\Controllers\PublicProjectController;
+use App\Http\Controllers\PublicSkillController;
+use App\Http\Controllers\PublicContactController;
+use App\Http\Controllers\PublicBlogController;
 
-/* ---------- Public site ---------- */
+use App\Http\Controllers\Admin\ContactMessageController;
+use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
+use App\Http\Controllers\Admin\SkillCategoryController;
+use App\Http\Controllers\Admin\SkillController;
+use App\Http\Controllers\Admin\PostController as AdminPostController;
+use App\Http\Controllers\Admin\PostCategoryController as AdminPostCategoryController;
+
+use App\Http\Controllers\UserDashboardController;
+use App\Models\Project;
+
+/*
+|--------------------------------------------------------------------------
+| Post-login redirect (admins → admin.dashboard, users → home)
+|--------------------------------------------------------------------------
+*/
+Route::get('/redirect', function () {
+    $user = Auth::user();
+
+    if (! $user) {
+        return redirect()->route('login');
+    }
+
+    // Admins -> admin dashboard, Users -> public homepage
+    return $user->is_admin
+        ? redirect()->route('admin.dashboard')
+        : redirect()->route('home');
+})->middleware('auth')->name('postlogin.redirect');
+
+
+/*
+|--------------------------------------------------------------------------
+| Optional user dashboard (you can keep this if you have a page)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')
+    ->get('/dashboard', [UserDashboardController::class, 'index'])
+    ->name('user.dashboard');
+
+
+/*
+|--------------------------------------------------------------------------
+| Public site
+|--------------------------------------------------------------------------
+*/
 Route::get('/', [PagesController::class, 'index'])->name('home');
 
-/* ---------- Admin: dashboard & main ---------- */
-Route::get('/admin/dashboard', [PagesController::class, 'dashboard'])->name('admin.dashboard');
+Route::get('/projects', [PublicProjectController::class, 'index'])->name('projects.index');
+Route::get('/projects/{slug}', [PublicProjectController::class, 'show'])->name('projects.show');
 
-Route::get('/admin/main',  [MainPagesController::class, 'index'])->name('admin.main');
-Route::put('/admin/main',  [MainPagesController::class, 'update'])->name('admin.main.update');
+Route::get('/skills', [PublicSkillController::class, 'index'])->name('skills.index');
 
-/* ---------- Admin: Services ---------- */
-Route::get('/admin/services',                [PagesController::class, 'services'])->name('admin.services');
-Route::get('/admin/services/create',         [ServicePagesController::class, 'create'])->name('admin.services.create');
-Route::post('/admin/services/create',        [ServicePagesController::class, 'store'])->name('admin.services.store');
-Route::get('/admin/services/list',           [ServicePagesController::class, 'list'])->name('admin.services.list');
-Route::get('/admin/services/edit/{id}',      [ServicePagesController::class, 'edit'])->name('admin.services.edit');
-Route::put('/admin/services/update/{id}',    [ServicePagesController::class, 'update'])->name('admin.services.update');
-Route::delete('/admin/services/destroy/{id}',[ServicePagesController::class, 'destroy'])->name('admin.services.destroy');
+Route::post('/contact', [PublicContactController::class, 'store'])->name('contact.store');
 
-/* ---------- Admin: Portfolios ---------- */
-Route::get('/admin/portfolios/create',         [PortfolioPagesController::class, 'create'])->name('admin.portfolios.create');
-Route::put('/admin/portfolios/create',        [PortfolioPagesController::class, 'store'])->name('admin.portfolios.store');
-Route::get('/admin/portfolios/list',           [PortfolioPagesController::class, 'list'])->name('admin.portfolios.list');
-Route::get('/admin/portfolios/edit/{id}',      [PortfolioPagesController::class, 'edit'])->name('admin.portfolios.edit');
-Route::put('/admin/portfolios/update/{id}',    [PortfolioPagesController::class, 'update'])->name('admin.portfolios.update');
-Route::delete('/admin/portfolios/destroy/{id}',[PortfolioPagesController::class, 'destroy'])->name('admin.portfolios.destroy');
+Route::get('/blog', [PublicBlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [PublicBlogController::class, 'show'])->name('blog.show');
 
-/* ---------- Admin: Abouts ---------- */
-// Route::get('/admin/abouts/create',         [AboutPagesController::class, 'create'])->name('admin.abouts.create');
-// Route::post('/admin/abouts/create',        [AboutPagesController::class, 'store'])->name('admin.abouts.store');
-// Route::get('/admin/abouts/list',           [AboutPagesController::class, 'list'])->name('admin.abouts.list');
-// Route::get('/admin/abouts/edit/{id}',      [AboutPagesController::class, 'edit'])->name('admin.abouts.edit');
-// Route::put('/admin/abouts/update/{id}',    [AboutPagesController::class, 'update'])->name('admin.abouts.update');
-// Route::delete('/admin/abouts/destroy/{id}',[AboutPagesController::class, 'destroy'])->name('admin.abouts.destroy');
+/* (optional) quick debug helpers
+Route::get('/_debug/projects', fn () => Project::with('techTags')->get());
+Route::get('/whoami', function () {
+    if (!Auth::check()) return 'Not logged in';
+    $u = Auth::user();
+    return "Logged in as {$u->email} | is_admin=" . ($u->is_admin ? 'yes' : 'no');
+});
+*/
 
-// /* ---------- Simple admin pages (if you still use these menus) ---------- */
-Route::get('/admin/portfolio', [PagesController::class, 'portfolio'])->name('admin.portfolio');
-Route::get('/admin/about',     [PagesController::class, 'about'])->name('admin.about');
-Route::get('/admin/contact',   [PagesController::class, 'contact'])->name('admin.contact');
 
-/* ---------- Public: contact form submit ---------- */
-// Route::post('/contact', [ContactFormController::class, 'store'])->name('contact.store');
-
-/* ---------- Auth scaffolding ---------- */
+/*
+|--------------------------------------------------------------------------
+| Auth scaffolding (Laravel UI / Breeze / Jetstream registers these)
+|--------------------------------------------------------------------------
+*/
 Auth::routes();
 
-/* Avoid duplicate route name "home" if the line below exists
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+/*
+|--------------------------------------------------------------------------
+| Admin area (auth + admin)
+|--------------------------------------------------------------------------
 */
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+
+        // Dashboard — keep using your existing PagesController@dashboard
+        Route::get('/dashboard', [PagesController::class, 'dashboard'])->name('dashboard');
+
+        // Static pages in admin (if you use them)
+        Route::get('/about',   [PagesController::class, 'about'])->name('about');
+        Route::get('/contact', [PagesController::class, 'contact'])->name('contact');
+
+        // Main settings
+        Route::get('/main', [\App\Http\Controllers\MainPagesController::class, 'index'])->name('main');
+        Route::put('/main', [\App\Http\Controllers\MainPagesController::class, 'update'])->name('main.update');
+
+        // Services CRUD (pages)
+        Route::get('/services', [PagesController::class, 'services'])->name('services');
+        Route::get('/services/create', [\App\Http\Controllers\ServicePagesController::class, 'create'])->name('services.create');
+        Route::post('/services', [\App\Http\Controllers\ServicePagesController::class, 'store'])->name('services.store');
+        Route::get('/services/list', [\App\Http\Controllers\ServicePagesController::class, 'list'])->name('services.list');
+        Route::get('/services/edit/{id}', [\App\Http\Controllers\ServicePagesController::class, 'edit'])->name('services.edit');
+        Route::put('/services/update/{id}', [\App\Http\Controllers\ServicePagesController::class, 'update'])->name('services.update');
+        Route::delete('/services/destroy/{id}', [\App\Http\Controllers\ServicePagesController::class, 'destroy'])->name('services.destroy');
+
+        // Portfolios CRUD (pages)
+        Route::get('/portfolios/create', [\App\Http\Controllers\PortfolioPagesController::class, 'create'])->name('portfolios.create');
+        Route::post('/portfolios', [\App\Http\Controllers\PortfolioPagesController::class, 'store'])->name('portfolios.store');
+        Route::get('/portfolios/list', [\App\Http\Controllers\PortfolioPagesController::class, 'list'])->name('portfolios.list');
+        Route::get('/portfolios/edit/{id}', [\App\Http\Controllers\PortfolioPagesController::class, 'edit'])->name('portfolios.edit');
+        Route::put('/portfolios/update/{id}', [\App\Http\Controllers\PortfolioPagesController::class, 'update'])->name('portfolios.update');
+        Route::delete('/portfolios/destroy/{id}', [\App\Http\Controllers\PortfolioPagesController::class, 'destroy'])->name('portfolios.destroy');
+
+        // Skills CRUD
+        Route::get('/skills',                [SkillController::class, 'index'])->name('skills.index');
+        Route::get('/skills/create',         [SkillController::class, 'create'])->name('skills.create');
+        Route::post('/skills',               [SkillController::class, 'store'])->name('skills.store');
+        Route::get('/skills/{skill}/edit',   [SkillController::class, 'edit'])->name('skills.edit');
+        Route::put('/skills/{skill}',        [SkillController::class, 'update'])->name('skills.update');
+        Route::delete('/skills/{skill}',     [SkillController::class, 'destroy'])->name('skills.destroy');
+
+        // Skill categories CRUD
+        Route::get('/skill-categories',                        [SkillCategoryController::class, 'index'])->name('skill_categories.index');
+        Route::get('/skill-categories/create',                 [SkillCategoryController::class, 'create'])->name('skill_categories.create');
+        Route::post('/skill-categories',                       [SkillCategoryController::class, 'store'])->name('skill_categories.store');
+        Route::get('/skill-categories/{skill_category}/edit',  [SkillCategoryController::class, 'edit'])->name('skill_categories.edit');
+        Route::put('/skill-categories/{skill_category}',       [SkillCategoryController::class, 'update'])->name('skill_categories.update');
+        Route::delete('/skill-categories/{skill_category}',    [SkillCategoryController::class, 'destroy'])->name('skill_categories.destroy');
+
+        // Messages inbox
+        Route::get('/messages',                 [ContactMessageController::class, 'index'])->name('messages.index');
+        Route::get('/messages/{message}',       [ContactMessageController::class, 'show'])->name('messages.show');
+        Route::delete('/messages/{message}',    [ContactMessageController::class, 'destroy'])->name('messages.destroy');
+        Route::post('/messages/{message}/read', [ContactMessageController::class, 'markRead'])->name('messages.read');
+        Route::post('/messages/{message}/unread', [ContactMessageController::class, 'markUnread'])->name('messages.unread');
+
+        // Projects (resource, no public show)
+        Route::resource('projects', AdminProjectController::class)->except(['show']);
+
+        // Blog posts
+        Route::get('/blog',             [AdminPostController::class, 'index'])->name('blog.index');
+        Route::get('/blog/create',      [AdminPostController::class, 'create'])->name('blog.create');
+        Route::post('/blog',            [AdminPostController::class, 'store'])->name('blog.store');
+        Route::get('/blog/{post}/edit', [AdminPostController::class, 'edit'])->name('blog.edit');
+        Route::put('/blog/{post}',      [AdminPostController::class, 'update'])->name('blog.update');
+        Route::delete('/blog/{post}',   [AdminPostController::class, 'destroy'])->name('blog.destroy');
+
+        // Blog categories
+        Route::get('/blog-categories',                [AdminPostCategoryController::class, 'index'])->name('blog.categories');
+        Route::post('/blog-categories',               [AdminPostCategoryController::class, 'store'])->name('blog.categories.store');
+        Route::delete('/blog-categories/{category}',  [AdminPostCategoryController::class, 'destroy'])->name('blog.categories.destroy');
+    });

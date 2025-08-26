@@ -1,4 +1,7 @@
-@extends('layouts.admin_layout')
+<link href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+@extends('layouts.admin')
+
 
 @section('content')
   <main>
@@ -26,6 +29,10 @@
                     <label for="title"><h4>Title</h4></label>
                     <input type="text" class="form-control" id="title" name="title">
                 </div>
+                <div class="mb-3">
+    <label for="category" class="form-label">Category</label>
+    <input type="text" class="form-control" id="category" name="category" value="{{ old('category', $service->category ?? '') }}">
+</div>
 
                 <div class="mb-5">
                     <label for="description"><h4>Description</h4></label>
