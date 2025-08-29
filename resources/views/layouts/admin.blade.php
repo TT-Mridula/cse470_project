@@ -63,8 +63,13 @@
 
             <a class="nav-link {{ request()->routeIs('admin.main*') ? 'active' : '' }}"
                href="{{ route('admin.main') }}">
-              <div class="sb-nav-link-icon"><i class="fas fa-home"></i></div> Main
+              <div class="sb-nav-link-icon"><i class="fas fa-home"></i></div> Resume
             </a>
+            <a class="nav-link {{ request()->routeIs('admin.profile.*') ? 'active' : '' }}"
+   href="{{ route('admin.profile.edit') }}">
+  <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
+  Profile
+</a>
 
             {{-- Services --}}
             @php $svcOpen = request()->routeIs('admin.services.*'); @endphp

@@ -11,14 +11,15 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * Mass assignable attributes.
-     */
+    public function profile()  { return $this->hasOne(\App\Models\UserProfile::class); }
+    public function projects() { return $this->hasMany(\App\Models\UserProject::class); }
+    public function skills()   { return $this->hasMany(\App\Models\UserSkill::class); }
+    public function resume()   { return $this->hasOne(\App\Models\Resume::class); } 
+
+
+  
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'is_admin',
+    'name', 'email', 'password', 'is_admin', 'phone', 'otp_code', 'otp_expires_at', 'otp_attempts',
     ];
 
     /**
@@ -27,14 +28,15 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'login_otp', // never expose the code
     ];
 
-    /**
-     * Attribute casting.
-     */
+ 
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password'          => 'hashed',  // keep if your Laravel supports hashed cast
-        'is_admin'          => 'boolean',
-    ];
+    'email_verified_at' => 'datetime',
+    'password' => 'hashed',
+    'is_admin' => 'boolean',
+    'otp_expires_at' => 'datetime',
+    'otp_attempts' => 'integer',
+];
 }

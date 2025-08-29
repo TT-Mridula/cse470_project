@@ -7,7 +7,7 @@
      * Resolve a public URL for a file that may be stored as:
      *  - "img/…" (on disk)  -> Storage::url(...)
      *  - "storage/img/…" (already public) -> asset(...)
-     *  - Full URL (http/https)           -> use as-is
+     *  - Full URL (http/https)             -> use as-is
      */
     function file_public_url(?string $path, string $fallback = ''): string {
         if (!$path) return $fallback;
@@ -19,6 +19,11 @@
     // Background image + resume
     $bg        = file_public_url($main?->bc_img, asset('assets/img/bc_img.jpg'));
     $resumeUrl = $main?->resume ? file_public_url($main->resume) : null;
+
+    // Profile avatar (uses accessor if you added it; falls back to placeholder)
+    $avatarUrl = isset($profile)
+        ? ($profile->avatar_url ?? asset('images/avatar-placeholder.png'))
+        : asset('images/avatar-placeholder.png');
 @endphp
 
 <!DOCTYPE html>
@@ -102,34 +107,30 @@
       .skill .lvl{color:#cbd2ff;font-size:12px}
       .bar{height:10px;background:#23285e;border-radius:999px;margin-top:8px;overflow:hidden}
       .fill{height:100%;background:linear-gradient(90deg,#6d5cff,#8f7bff)}
+
+      /* profile (about) */
+      .profile-wrap{
+        display:flex;gap:18px;align-items:center;
+        background:linear-gradient(180deg,var(--glass),var(--glass2));
+        border-radius:16px;padding:18px;color:#e6e9ff
+      }
+      .profile-wrap .avatar{
+        width:100px;height:100px;border-radius:999px;object-fit:cover;
+        box-shadow:0 0 0 3px rgba(255,255,255,.06)
+      }
+      .profile-wrap .name{margin:0 0 6px;font-size:22px}
+      .profile-wrap .bio{color:var(--muted);margin:0 0 10px;line-height:1.6;max-width:65ch}
+      .profile-wrap .contacts{display:flex;flex-wrap:wrap;gap:8px}
+      .profile-wrap .chip{
+        display:inline-flex;align-items:center;gap:8px;
+        background:var(--chip);padding:6px 10px;border-radius:999px;
+        font-size:13px;color:#cfd5ff;text-decoration:none
+      }
+      .profile-wrap .chip:hover{opacity:1; filter:brightness(1.05)}
+      .profile-wrap .chip i{color:#cbd2ff}
     </style>
 </head>
 <body id="page-top">
-    {{-- Dark glass Navigation --}}
-    {{-- <nav class="site-nav navbar navbar-expand-lg fixed-top py-2">
-      <div class="container px-4 px-lg-5">
-        <a class="navbar-brand" href="#page-top">Skill Stacker</a>
-
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive"
-                aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarResponsive">
-          <ul class="navbar-nav ms-auto my-2 my-lg-0">
-            <li class="nav-item"><a class="nav-link" href="#projects">Projects</a></li>
-            <li class="nav-item"><a class="nav-link" href="#skills">Skills</a></li>
-            <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-            <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
-            <li class="nav-item"><a class="nav-link" href="#portfolio">Portfolio</a></li>
-            <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-            
-            <li class="nav-item"><a class="nav-link" href="{{ route('blog.index') }}">Blog</a></li> 
-
-          </ul>
-        </div>
-      </div>
-    </nav> --}}
     {{-- === Dark glass Navigation (HOME) === --}}
 <nav class="site-nav">
   <div class="nav-inner">
@@ -143,7 +144,7 @@
       <a href="{{ url('/#portfolio') }}">Portfolio</a>
       <a href="{{ url('/#contact') }}">Contact</a>
 
-      <a href="{{ route('projects.index') }}" class="{{ request()->routeIs('projects.*') ? 'active' : '' }}">All Projects</a> 
+      <a href="{{ route('projects.index') }}" class="{{ request()->routeIs('projects.*') ? 'active' : '' }}">All Projects</a>
       <a href="{{ route('skills.index') }}" class="{{ request()->routeIs('skills.*') ? 'active' : '' }}">Skills Directory</a>
       <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
     </nav>
@@ -197,7 +198,6 @@
   .logout button:hover{background:rgba(255,255,255,.06)}
 </style>
 
-
     {{-- Masthead (Hero) --}}
     <header class="masthead position-relative"
             style="background-image:url('{{ $bg }}'); background-size:cover; background-position:center;">
@@ -221,6 +221,57 @@
             </div>
         </div>
     </header>
+
+    {{-- About / Profile --}}
+    <section class="home-section" id="about">
+      <div class="container px-4 px-lg-5">
+        @if(isset($profile) && ($profile->name || $profile->bio || $profile->email || $profile->phone || !empty($profile->socials)))
+          <div class="profile-wrap">
+            <img class="avatar" src="{{ $avatarUrl }}" alt="{{ $profile->name ?? 'Avatar' }}">
+            <div class="meta">
+              <h2 class="name">{{ $profile->name ?: 'Your Name' }}</h2>
+
+              @if(!empty($profile->bio))
+                <p class="bio">{{ $profile->bio }}</p>
+              @endif
+
+              <div class="contacts">
+                @if(!empty($profile->email))
+                  <a href="mailto:{{ $profile->email }}" class="chip">
+                    <i class="fa-solid fa-envelope"></i><span>{{ $profile->email }}</span>
+                  </a>
+                @endif
+                @if(!empty($profile->phone))
+                  <span class="chip">
+                    <i class="fa-solid fa-phone"></i><span>{{ $profile->phone }}</span>
+                  </span>
+                @endif
+
+                @if(!empty($profile->socials) && is_array($profile->socials))
+                  @foreach($profile->socials as $label => $url)
+                    @if($url)
+                      <a href="{{ $url }}" target="_blank" rel="noopener" class="chip">
+                        <i class="fa-brands fa-{{ Str::slug($label) }}"></i>
+                        <span>{{ is_string($label) ? ucfirst($label) : 'Social' }}</span>
+                      </a>
+                    @endif
+                  @endforeach
+                @endif
+              </div>
+            </div>
+          </div>
+        @else
+          {{-- Fallback content (kept from your previous template) --}}
+          <div class="page-section bg-primary rounded-3 p-4 text-center">
+            <h2 class="text-white mt-0">We have what you need</h2>
+            <p class="text-white-75 mb-3">
+              Start Bootstrap has everything you need to get your new website up and running in no time.
+            </p>
+            <a class="btn btn-light btn-xl" href="#services">Get Started</a>
+          </div>
+        @endif
+      </div>
+    </section>
 
     {{-- Projects on home --}}
     <section id="projects" class="home-section">
@@ -255,22 +306,6 @@
             @else
                 <p class="muted">No projects yet.</p>
             @endif
-        </div>
-    </section>
-
-    {{-- About --}}
-    <section class="page-section bg-primary" id="about">
-        <div class="container px-4 px-lg-5">
-            <div class="row gx-4 gx-lg-5 justify-content-center">
-                <div class="col-lg-8 text-center">
-                    <h2 class="text-white mt-0">We have what you need</h2>
-                    <hr class="divider divider-light" />
-                    <p class="text-white-75 mb-4">
-                        Start Bootstrap has everything you need to get your new website up and running in no time.
-                    </p>
-                    <a class="btn btn-light btn-xl" href="#services">Get Started</a>
-                </div>
-            </div>
         </div>
     </section>
 

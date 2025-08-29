@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-{{-- Local styles (move to your app.css later if you prefer) --}}
+{{-- Local styles (move to app.css later if you prefer) --}}
 <style>
   :root{
     --brand:#111827;          /* dark navy */
@@ -81,7 +81,7 @@
   <div class="page-head">
     <span class="page-dot"></span>
     <div>
-      <div class="page-title h3 m-0">Main</div>
+      <div class="page-title h3 m-0">Resume</div>
       <div class="page-sub">Hero background, headline, and resume</div>
     </div>
   </div>
@@ -89,7 +89,7 @@
   {{-- Breadcrumbs --}}
   <ol class="breadcrumb mb-4">
     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-    <li class="breadcrumb-item active">Main</li>
+    <li class="breadcrumb-item active">Resume</li>
   </ol>
 
   {{-- Flash + errors --}}
@@ -120,7 +120,7 @@
         <div class="cardx-body">
 
           <div class="hero-wrap mb-3">
-            @if ($main->bc_img)
+            @if (!empty($main?->bc_img))
               <img id="heroPreview" class="hero-img" src="{{ Storage::url($main->bc_img) }}" alt="Background Image">
             @else
               <div id="heroEmpty" class="hero-empty">No image uploaded</div>
@@ -129,7 +129,7 @@
 
             <div class="hero-overlay">
               <button type="button" class="btn-ghost" id="selectHeroBtn">Replace</button>
-              @if ($main->bc_img)
+              @if (!empty($main?->bc_img))
                 <a class="btn-ghost" href="{{ Storage::url($main->bc_img) }}" target="_blank" rel="noopener">Open</a>
               @endif
             </div>
@@ -158,25 +158,25 @@
           <div class="row g-3">
             <div class="col-12">
               <label class="form-label fw-semibold">Title</label>
-              <input type="text" name="title" class="form-control" value="{{ old('title', $main->title) }}" placeholder="Build Your Career">
+              <input type="text" name="title" class="form-control" value="{{ old('title', $main->title ?? '') }}" placeholder="Build Your Career">
               @error('title') <small class="text-danger">{{ $message }}</small> @enderror
             </div>
 
             <div class="col-12">
               <label class="form-label fw-semibold">Sub Title</label>
-              <input type="text" name="sub_title" class="form-control" value="{{ old('sub_title', $main->sub_title) }}" placeholder="Learn. Grow. Achieve.">
+              <input type="text" name="sub_title" class="form-control" value="{{ old('sub_title', $main->sub_title ?? '') }}" placeholder="Learn. Grow. Achieve.">
               @error('sub_title') <small class="text-danger">{{ $message }}</small> @enderror
             </div>
 
             <div class="col-12">
               <label class="form-label fw-semibold">Upload Resume (PDF)</label>
               <div class="d-flex align-items-center gap-2 flex-wrap">
-                @if ($main->resume)
+                @if (!empty($main?->resume))
                   <a class="chip" href="{{ Storage::url($main->resume) }}" target="_blank" rel="noopener">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 21h12a1 1 0 0 0 1-1V9l-6-6H7a1 1 0 0 0-1 1v6" stroke="#3730a3" stroke-width="1.6"/><path d="M14 3v6h6" stroke="#3730a3" stroke-width="1.6"/></svg>
                     Download resume
                   </a>
-                @endif>
+                @endif
 
                 <input class="form-control" type="file" id="resume" name="resume" accept="application/pdf" style="max-width:340px">
                 <span id="resumeName" class="text-muted small"></span>

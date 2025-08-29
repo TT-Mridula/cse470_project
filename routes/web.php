@@ -17,11 +17,25 @@ use App\Http\Controllers\Admin\PostController as AdminPostController;
 use App\Http\Controllers\Admin\PostCategoryController as AdminPostCategoryController;
 
 use App\Http\Controllers\UserDashboardController;
-use App\Models\Project;
+use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 
+//
+use App\Http\Controllers\Auth\OtpUiController;
+
+Route::get('/register/otp',  [OtpUiController::class, 'show'])->name('register.otp.form');
+Route::post('/register/otp', [OtpUiController::class, 'verify'])->name('register.otp.verify');
+Route::post('/register/otp/resend', [OtpUiController::class, 'resend'])->name('register.otp.resend');
+//
+use App\Http\Controllers\User\ResumeController as MeResumeController;
+
+Route::middleware('auth')->prefix('me')->name('me.')->group(function () {
+    Route::get('/resume', [MeResumeController::class, 'show'])->name('resume.show');
+    Route::get('/resume/edit', [MeResumeController::class, 'edit'])->name('resume.edit');
+    Route::put('/resume', [MeResumeController::class, 'update'])->name('resume.update');
+});
 /*
 |--------------------------------------------------------------------------
-| Post-login redirect (admins → admin.dashboard, users → home)
+| Post login redirect
 |--------------------------------------------------------------------------
 */
 Route::get('/redirect', function () {
@@ -31,22 +45,19 @@ Route::get('/redirect', function () {
         return redirect()->route('login');
     }
 
-    // Admins -> admin dashboard, Users -> public homepage
     return $user->is_admin
         ? redirect()->route('admin.dashboard')
         : redirect()->route('home');
 })->middleware('auth')->name('postlogin.redirect');
 
-
 /*
 |--------------------------------------------------------------------------
-| Optional user dashboard (you can keep this if you have a page)
+| Optional user dashboard
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')
     ->get('/dashboard', [UserDashboardController::class, 'index'])
     ->name('user.dashboard');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -65,38 +76,29 @@ Route::post('/contact', [PublicContactController::class, 'store'])->name('contac
 Route::get('/blog', [PublicBlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [PublicBlogController::class, 'show'])->name('blog.show');
 
-/* (optional) quick debug helpers
-Route::get('/_debug/projects', fn () => Project::with('techTags')->get());
-Route::get('/whoami', function () {
-    if (!Auth::check()) return 'Not logged in';
-    $u = Auth::user();
-    return "Logged in as {$u->email} | is_admin=" . ($u->is_admin ? 'yes' : 'no');
-});
-*/
-
-
 /*
 |--------------------------------------------------------------------------
-| Auth scaffolding (Laravel UI / Breeze / Jetstream registers these)
+| Auth scaffolding
 |--------------------------------------------------------------------------
 */
 Auth::routes();
 
-
 /*
 |--------------------------------------------------------------------------
-| Admin area (auth + admin)
+| Admin area
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        Route::get('/profile',  [AdminProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile',  [AdminProfileController::class, 'update'])->name('profile.update');
 
-        // Dashboard — keep using your existing PagesController@dashboard
+        // Dashboard
         Route::get('/dashboard', [PagesController::class, 'dashboard'])->name('dashboard');
 
-        // Static pages in admin (if you use them)
+        // Static pages in admin
         Route::get('/about',   [PagesController::class, 'about'])->name('about');
         Route::get('/contact', [PagesController::class, 'contact'])->name('contact');
 
@@ -104,7 +106,7 @@ Route::middleware(['auth', 'admin'])
         Route::get('/main', [\App\Http\Controllers\MainPagesController::class, 'index'])->name('main');
         Route::put('/main', [\App\Http\Controllers\MainPagesController::class, 'update'])->name('main.update');
 
-        // Services CRUD (pages)
+        // Services CRUD
         Route::get('/services', [PagesController::class, 'services'])->name('services');
         Route::get('/services/create', [\App\Http\Controllers\ServicePagesController::class, 'create'])->name('services.create');
         Route::post('/services', [\App\Http\Controllers\ServicePagesController::class, 'store'])->name('services.store');
@@ -113,7 +115,7 @@ Route::middleware(['auth', 'admin'])
         Route::put('/services/update/{id}', [\App\Http\Controllers\ServicePagesController::class, 'update'])->name('services.update');
         Route::delete('/services/destroy/{id}', [\App\Http\Controllers\ServicePagesController::class, 'destroy'])->name('services.destroy');
 
-        // Portfolios CRUD (pages)
+        // Portfolios CRUD
         Route::get('/portfolios/create', [\App\Http\Controllers\PortfolioPagesController::class, 'create'])->name('portfolios.create');
         Route::post('/portfolios', [\App\Http\Controllers\PortfolioPagesController::class, 'store'])->name('portfolios.store');
         Route::get('/portfolios/list', [\App\Http\Controllers\PortfolioPagesController::class, 'list'])->name('portfolios.list');
@@ -138,13 +140,13 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/skill-categories/{skill_category}',    [SkillCategoryController::class, 'destroy'])->name('skill_categories.destroy');
 
         // Messages inbox
-        Route::get('/messages',                 [ContactMessageController::class, 'index'])->name('messages.index');
-        Route::get('/messages/{message}',       [ContactMessageController::class, 'show'])->name('messages.show');
-        Route::delete('/messages/{message}',    [ContactMessageController::class, 'destroy'])->name('messages.destroy');
-        Route::post('/messages/{message}/read', [ContactMessageController::class, 'markRead'])->name('messages.read');
-        Route::post('/messages/{message}/unread', [ContactMessageController::class, 'markUnread'])->name('messages.unread');
+        Route::get('/messages',                    [ContactMessageController::class, 'index'])->name('messages.index');
+        Route::get('/messages/{message}',          [ContactMessageController::class, 'show'])->name('messages.show');
+        Route::delete('/messages/{message}',       [ContactMessageController::class, 'destroy'])->name('messages.destroy');
+        Route::post('/messages/{message}/read',    [ContactMessageController::class, 'markRead'])->name('messages.read');
+        Route::post('/messages/{message}/unread',  [ContactMessageController::class, 'markUnread'])->name('messages.unread');
 
-        // Projects (resource, no public show)
+        // Projects
         Route::resource('projects', AdminProjectController::class)->except(['show']);
 
         // Blog posts
